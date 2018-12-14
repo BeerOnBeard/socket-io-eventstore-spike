@@ -1,18 +1,5 @@
 const port = 3000;
 
-const getCircularReplacer = () => {
-  const seen = new WeakSet();
-  return (key, value) => {
-    if (typeof value === "object" && value !== null) {
-      if (seen.has(value)) {
-        return;
-      }
-      seen.add(value);
-    }
-    return value;
-  };
-};
-
 const express = require('express');
 const app = express();
 const http = require('http').Server(app);
