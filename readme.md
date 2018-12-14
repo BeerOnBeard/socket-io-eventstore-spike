@@ -2,6 +2,24 @@
 
 The purpose of this repository is to investigate how Socket.io and EventStore integrate with each other.
 
+## Startup
+
+```
+docker-compose up
+```
+
+Then navigate to http://localhost:3000.
+
+### Debugging Client
+
+Only run EventStore
+
+```
+docker-compose up eventstore
+```
+
+and use your favorite IDE to launch the app in debug mode.
+
 ## What to Prove
 
 - EventStore can be written to using a JavaScript driver
