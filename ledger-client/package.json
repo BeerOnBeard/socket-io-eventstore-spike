@@ -1,0 +1,15 @@
+{
+  "name": "ledger-client",
+  "version": "0.0.1",
+  "description": "A client for accessing and manipulating ledgers",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "BeerOnBeard",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.4",
+    "socket.io": "^2.2.0"
+  }
+}
