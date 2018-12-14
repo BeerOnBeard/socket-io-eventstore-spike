@@ -18,14 +18,14 @@ io.on('connection', socket => {
 
 function emitToLedgerOne() {
   setTimeout(function() {
-    io.to(1).emit('event');
+    io.to(1).emit('event', 'From ledger 1');
     emitToLedgerOne();
   }, 1000);
 }
 
 function emitToLedgerTwo() {
   setTimeout(function() {
-    io.to(2).emit('event');
+    io.to(2).emit('event', 'From ledger 2');
     emitToLedgerTwo();
   }, 1000);
 }

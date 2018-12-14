@@ -1,7 +1,11 @@
 (function(){
   function main() {
     var socket = io();
-    socket.on('event', function(){ console.log('Event occurred'); });
+    socket.on('event', function(msg){ 
+      var li = document.createElement('li');
+      li.innerText = msg;
+      document.getElementById('messages').append(li);
+    });
   
     document.getElementById('setLedger').addEventListener('click', function(){
       var ledgerId = document.getElementById('ledger').value;
