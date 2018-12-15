@@ -1,4 +1,46 @@
-const EventFactory = require('./EventFactory');
+const generateGuid = require('uuid/v4');
+const EventStore = require('event-store-client');
+
+const EventFactory = {
+  types: {
+    created: 'LedgerCreated',
+    incremented: 'LedgerIncremented',
+    decremented: 'LedgerDecremented'
+  },
+
+  ledgerCreated: description => {
+    return {
+      eventId: EventStore.Connection.createGuid(),
+      eventType: EventFactory.types.created,
+      data: {
+        id: generateGuid(),
+        description: description
+      }
+    };
+  },
+  
+  ledgerIncremented: (ledgerId, value) => {
+    return {
+      eventId: EventStore.Connection.createGuid(),
+      eventType: EventFactory.types.incremented,
+      data: {
+        id: ledgerId,
+        value: value
+      }
+    };
+  },
+  
+  ledgerDecremented: (ledgerId, value) => {
+    return {
+      eventId: EventStore.Connection.createGuid(),
+      eventType: EventFactory.types.decremented,
+      data: {
+        id: ledgerId,
+        value: value
+      }
+    }
+  }
+};
 
 class Ledger {
   // internal method to apply event to model and add to uncommitted events
@@ -36,13 +78,13 @@ class Ledger {
   apply(event) {
     this.lastEventNumber = event.eventNumber;
     switch(event.eventType) {
-      case EventFactory.Types.created:
+      case EventFactory.types.created:
         this._created(event);
         break;
-      case EventFactory.Types.incremented:
+      case EventFactory.types.incremented:
         this._incremented(event);
         break;
-      case EventFactory.Types.decremented:
+      case EventFactory.types.decremented:
         this._decremented(event);
         break;
     }
