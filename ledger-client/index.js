@@ -1,5 +1,5 @@
 const port = 3000;
-const eventstoreConfig = {
+const eventStoreConfig = {
   host: 'minikube',
   port: 1113,
   credentials: {
@@ -15,12 +15,14 @@ const server = require('http').Server(app);
 app.use(express.static('public'));
 app.use(express.json());
 
+const EventStore = require('event-store-client');
+const eventStoreConnection = new EventStore.Connection({ host: eventStoreConfig.host, port: eventStoreConfig.port });
+
 const LedgerRepository = require('./LedgerRepository');
 const ledgerRepository = new LedgerRepository(
-  eventstoreConfig.host,
-  eventstoreConfig.port,
-  eventstoreConfig.credentials.username,
-  eventstoreConfig.credentials.password);
+  eventStoreConnection,
+  eventStoreConfig.credentials.username,
+  eventStoreConfig.credentials.password);
 
 const LedgerController = require('./LedgerController');
 const ledgerController = new LedgerController(ledgerRepository);
@@ -37,27 +39,21 @@ io.on('connection', socket => {
   });
 });
 
-const EventStore = require('event-store-client');
-const esConnection = new EventStore.Connection({ host: eventstoreConfig.host, port: eventstoreConfig.port });
-
-const buildEvent = esEvent => {
-  return {
-    eventType: esEvent.eventType,
-    eventNumber: esEvent.eventNumber,
-    data: esEvent.data
-  };
-};
-
-esConnection.subscribeToStream(
+eventStoreConnection.subscribeToStream(
   "$ce-Ledger",
   true,
   storedEvent => {
-    let ledgerEvent = buildEvent(storedEvent);
+    let ledgerEvent = {
+      eventType: storedEvent.eventType,
+      eventNumber: storedEvent.eventNumber,
+      data: storedEvent.data
+    };
+
     io.to(ledgerEvent.data.id).emit('event', ledgerEvent);
   },
   confirmation => console.log(confirmation),
   dropped => console.log(dropped),
-  eventstoreConfig.credentials,
+  eventStoreConfig.credentials,
   notHandled => console.log(notHandled)
 );
 

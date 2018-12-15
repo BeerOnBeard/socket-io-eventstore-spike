@@ -6,8 +6,8 @@ class LedgerRepository {
     return `Ledger-${ledgerId}`;
   }
 
-  constructor(host, port, username, password) {
-    this._connection = new EventStore.Connection({ host, port });
+  constructor(connection, username, password) {
+    this._connection = connection
     this._credentials = { username, password };
   }
 
