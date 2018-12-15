@@ -32,4 +32,4 @@ Spin up EventStore as a Docker container. Create a NodeJS application, hosted in
 
 ## Domain
 
-A simple ledger where users can increment and decrement a total using two commands: `IncrementTotal` and `DecrementTotal`. Each aggregate will be identified by a GUID. The client can create a new ledger with the command `CreateLedger`.
+A simple ledger where users can increment and decrement a total using two commands: `Increment` and `Decrement`. Each aggregate will be identified by a GUID. The client can create a new ledger with the command `Create`.
