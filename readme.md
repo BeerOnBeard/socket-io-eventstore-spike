@@ -33,11 +33,3 @@ Spin up EventStore as a Docker container. Create a NodeJS application, hosted in
 ## Domain
 
 A simple ledger where users can increment and decrement a total using two commands: `IncrementTotal` and `DecrementTotal`. Each aggregate will be identified by a GUID. The client can create a new ledger with the command `CreateLedger`.
-
-## Outstanding Questions
-
-- How to deal with a hydrated model on the client that does not get all events?
-
-For example, client one sets the existing ledger while, at the same time, client two increments the same ledger. Client one gets the state before the increment and does not subscribe to events in time to get the increment. The next event will be applied on an incorrect state.
-
-One option would be to have some sort of event order that could be validated on the client. If the client is out of date, it could re-query for the latest ledger state.
