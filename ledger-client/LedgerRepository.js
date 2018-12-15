@@ -1,40 +1,41 @@
 const EventStore = require('event-store-client');
 const Ledger = require('./Ledger');
 
-module.exports = function(host, port, username, password) {
-  var self = this;
-  self.connection = new EventStore.Connection({ host, port });
-  self.credentials = { username, password };
-
-  const buildStreamName = ledgerId => {
+class LedgerRepository {
+  _buildStreamName(ledgerId) {
     return `Ledger-${ledgerId}`;
+  }
+
+  constructor(host, port, username, password) {
+    this._connection = new EventStore.Connection({ host, port });
+    this._credentials = { username, password };
   }
 
   // returns a promise to get a Ledger by ID
   // if no ID is defined, a new Ledger will be provided
-  self.get = id => {
+  get(id) {
     if (id === undefined) {
       return new Promise(resolve => resolve(new Ledger()));
     }
 
     return new Promise(resolve => {
       let ledger = new Ledger();
-      self.connection.readStreamEventsForward(
-        buildStreamName(id),
+      this._connection.readStreamEventsForward(
+        this._buildStreamName(id),
         0,
         1000,
         false,
         false,
         event => ledger.apply(event),
-        self.credentials,
+        this._credentials,
         () => resolve(ledger)
       );
-    })
-  };
+    });
+  }
 
   // returns a promise to save a Ledger
   // promise resolves with the saved Ledger
-  self.save = ledger => {
+  save(ledger) {
     if (ledger.uncommittedEvents.length == 0) {
       return new Promise(resolve => resolve(ledger));
     }
@@ -42,17 +43,19 @@ module.exports = function(host, port, username, password) {
     return new Promise(resolve => {
       let newLedger = ledger.copy();
       let uncommittedEvents = newLedger.uncommittedEvents.splice(0);
-      self.connection.writeEvents(
-        buildStreamName(newLedger.id),
+      this._connection.writeEvents(
+        this._buildStreamName(newLedger.id),
         EventStore.ExpectedVersion.Any,
         false,
         uncommittedEvents,
-        self.credentials,
+        this._credentials,
         message => {
           newLedger.lastEventNumber = message.lastEventNumber; 
           resolve(newLedger);
         }
       );
     });
-  };
-};
+  }
+}
+
+module.exports = LedgerRepository;
