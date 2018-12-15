@@ -34,7 +34,7 @@ module.exports = function() {
   // command methods
   self.create = description => {
     if (self.id !== undefined) {
-      throw Error('Cannot create a ledger that already exists.');
+      throw new Error('Cannot create a ledger that already exists.');
     }
 
     publish(EventFactory.ledgerCreated(description));
@@ -42,7 +42,7 @@ module.exports = function() {
 
   self.increment = value => {
     if (self.id === undefined) {
-      throw Error('Cannot increment a ledger that does not exist.');
+      throw new Error('Cannot increment a ledger that does not exist.');
     }
 
     publish(EventFactory.ledgerIncremented(self.id, value));
@@ -50,7 +50,7 @@ module.exports = function() {
 
   self.decrement = value => {
     if (self.id === undefined) {
-      throw Error('Cannot decrement a ledger that does not exist.');
+      throw new Error('Cannot decrement a ledger that does not exist.');
     }
 
     publish(EventFactory.ledgerDecremented(self.id, value));

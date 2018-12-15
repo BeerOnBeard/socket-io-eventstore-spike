@@ -2,9 +2,9 @@ const generateGuid = require('uuid/v4');
 const EventStore = require('event-store-client');
 
 const Types = {
-  created: 'CreateLedger',
-  incremented: 'IncrementLedger',
-  decremented: 'DecrementLedger'
+  created: 'LedgerCreated',
+  incremented: 'LedgerIncremented',
+  decremented: 'LedgerDecremented'
 };
 
 const ledgerCreated = description => {
