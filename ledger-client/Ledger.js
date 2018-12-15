@@ -1,13 +1,15 @@
 const EventFactory = require('./EventFactory');
 
-module.exports = function() {
+function Ledger() {
   var self = this;
 
   // domain properties
   self.id = undefined;
+  self.description = undefined;
   self.total = 0;
 
   // aggregate properties
+  self.lastEventNumber = 0;
   self.uncommittedEvents = [];
 
   // internal method to apply event to model and add to uncommitted events
@@ -18,6 +20,7 @@ module.exports = function() {
   
   // apply an event to this model
   self.apply = event => {
+    self.lastEventNumber = event.eventNumber;
     switch(event.eventType) {
       case EventFactory.Types.created:
         created(event);
@@ -59,13 +62,26 @@ module.exports = function() {
   // internal methods to apply events to model
   const created = event => {
     self.id = event.data.id;
+    self.description = event.data.description;
   };
 
   const incremented = event => {
-    self.value += event.data.value;
+    self.total += event.data.value;
   };
 
   const decremented = event => {
-    self.value -= event.data.value;
+    self.total -= event.data.value;
   };
 };
+
+Ledger.prototype.copy = function() {
+  let newLedger = new Ledger();
+  newLedger.id = this.id;
+  newLedger.description = this.description;
+  newLedger.total = this.total;
+  newLedger.lastEventNumber = this.lastEventNumber;
+  newLedger.uncommittedEvents = this.uncommittedEvents;
+  return newLedger;
+};
+
+module.exports = Ledger;

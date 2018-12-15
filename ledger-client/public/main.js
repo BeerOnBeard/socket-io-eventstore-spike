@@ -2,10 +2,23 @@
   function Ledger(ledgerJson) {
     var self = this;
     self.id = ledgerJson.id;
+    self.description = ledgerJson.description;
     self.total = ledgerJson.total;
+    self.lastEventNumber = ledgerJson.lastEventNumber;
 
     self.apply = event => {
+      if (self.lastEventNumber >= event.eventNumber) {
+        return; // we've already applied this event
+      } else if (self.lastEventNumber + 1 !== event.eventNumber) {
+        throw new Error('Out of order event!! Time to get a new Ledger!');
+      }
+
+      self.lastEventNumber = event.eventNumber;
       switch(event.eventType) {
+        case 'LedgerCreated':
+          self.id = event.data.id;
+          self.description = event.data.description;
+          break;
         case 'LedgerIncremented':
           self.total += event.data.value;
           break;
@@ -16,25 +29,39 @@
     };
   }
 
-
   function init() {
     var socket = io();
     var links = undefined;
     var ledger = undefined;
 
     socket.on('event', function(msg){
+      var li = document.createElement('li');
+      li.innerText = JSON.stringify(msg);
+      document.getElementById('messages').append(li);
+
       if (msg.data.id !== ledger.id) {
         console.log('Got event for another ledger. Ignoring.');
         return;
       }
 
-      var li = document.createElement('li');
-      li.innerText = JSON.stringify(msg);
-      document.getElementById('messages').append(li);
+      try {
+        ledger.apply(msg);
+      } catch {
+        // super hack :)
+        // get the latest state from the server because we're out of date
+        document.getElementById('setLedger').click();
+        return;
+      }
 
-      ledger.apply(msg);
-      document.getElementById('total').value = ledger.total;
+      updateUiFields();
     });
+
+    function updateUiFields() {
+      document.getElementById('ledger').value = ledger.id;
+      document.getElementById('description').value = ledger.description;
+      document.getElementById('total').value = ledger.total;
+      document.getElementById('lastEventNumber').value = ledger.lastEventNumber;
+    }
 
     function parseLinkHeader(header) {
       if (header.length === 0) {
@@ -71,9 +98,9 @@
     }
 
     function handleLedgerJson(ledgerJson) {
-      socket.emit('set-ledger', ledger.id);
       ledger = new Ledger(ledgerJson);
-      document.getElementById('ledger').value = ledger.id;
+      socket.emit('set-ledger', ledger.id);
+      updateUiFields();
     }
 
     document.getElementById('setLedger').addEventListener('click', function(){

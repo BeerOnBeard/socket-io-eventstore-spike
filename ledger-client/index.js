@@ -40,7 +40,7 @@ app.post('/ledgers', async (req, res) => {
 
   let ledger = await ledgerRepository.get();
   ledger.create(description);
-  await ledgerRepository.save(ledger);
+  ledger = await ledgerRepository.save(ledger);
   
   addLedgerHeaders(res, ledger.id).status(201).json(ledger);
 });
@@ -63,7 +63,7 @@ app.post('/ledgers/:ledgerId/increment', async (req, res) => {
 
   let ledger = await ledgerRepository.get(req.params.ledgerId);
   ledger.increment(value);
-  await ledgerRepository.save(ledger);
+  ledger = await ledgerRepository.save(ledger);
     
   addLedgerHeaders(res, ledger.id).sendStatus(200);
 });
@@ -76,7 +76,7 @@ app.post('/ledgers/:ledgerId/decrement', async (req, res) => {
 
   let ledger = await ledgerRepository.get(req.params.ledgerId);
   ledger.decrement(value);
-  await ledgerRepository.save(ledger);
+  ledger = await ledgerRepository.save(ledger);
 
   addLedgerHeaders(res, ledger.id).sendStatus(200);
 });
@@ -96,15 +96,16 @@ let esConnection = new EventStore.Connection({ host: eventstoreConfig.host, port
 let buildEvent = esEvent => {
   return {
     eventType: esEvent.eventType,
+    eventNumber: esEvent.eventNumber,
     data: esEvent.data
   };
-}
+};
+
 esConnection.subscribeToStream(
   "$ce-Ledger",
   true,
   storedEvent => {
     let ledgerEvent = buildEvent(storedEvent);
-    console.log(ledgerEvent);
     io.to(ledgerEvent.data.id).emit('event', ledgerEvent);
   },
   confirmation => console.log(confirmation),

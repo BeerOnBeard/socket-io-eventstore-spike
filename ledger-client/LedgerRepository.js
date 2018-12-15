@@ -33,20 +33,25 @@ module.exports = function(host, port, username, password) {
   };
 
   // returns a promise to save a Ledger
+  // promise resolves with the saved Ledger
   self.save = ledger => {
     if (ledger.uncommittedEvents.length == 0) {
-      return new Promise(resolve => resolve());
+      return new Promise(resolve => resolve(ledger));
     }
 
     return new Promise(resolve => {
-      let uncommittedEvents = ledger.uncommittedEvents.splice(0);
+      let newLedger = ledger.copy();
+      let uncommittedEvents = newLedger.uncommittedEvents.splice(0);
       self.connection.writeEvents(
-        buildStreamName(ledger.id),
+        buildStreamName(newLedger.id),
         EventStore.ExpectedVersion.Any,
         false,
         uncommittedEvents,
         self.credentials,
-        () => { resolve(); }
+        message => {
+          newLedger.lastEventNumber = message.lastEventNumber; 
+          resolve(newLedger);
+        }
       );
     });
   };
