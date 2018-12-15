@@ -1,86 +1,56 @@
 const port = 3000;
 
-const eventstoreConfig = {
-  stream: 'Ledger',
-  host: 'minikube',
-  port: 1113,
-  credentials: {
-    username: 'admin',
-    password: 'changeit'
-  }
-};
+const LedgerRepository = require('./LedgerRepository');
+const ledgerRepository = new LedgerRepository('minikube', 1113, 'admin', 'changeit');
 
-const getStreamName = ledgerId => {
-  return `${eventstoreConfig.stream}-${ledgerId}`;
-};
-
-const EventFactory = require('./EventFactory');
 const express = require('express');
 const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
-const EventStore = require('event-store-client');
-const esConnection = new EventStore.Connection({ host: eventstoreConfig.host, port: eventstoreConfig.port });
 
 app.use(express.static('public'));
 app.use(express.json());
 
-app.post('/ledgers', (req, res) => {
+app.post('/ledgers', async (req, res) => {
   let description = req.body.description;
   if (!description) {
     res.send(400, 'Description is required.');
     return;
   }
 
-  let event = EventFactory.createLedger(description);
-  let id = event.data.id; // EventStore client mutates the event object (lame). Get ID before it's mutated.
-  esConnection.writeEvents(
-    getStreamName(event.data.id),
-    EventStore.ExpectedVersion.Any,
-    false,
-    [event],
-    eventstoreConfig.credentials,
-    ()=>{});
+  let ledger = await ledgerRepository.get();
+  ledger.create(description);
+  await ledgerRepository.save(ledger);
   
   res
-    .links({ increment: `/ledgers/${id}/increment`, decrement: `/ledgers/${id}/decrement` })
-    .header('x-id', id)
+    .links({ increment: `/ledgers/${ledger.id}/increment`, decrement: `/ledgers/${ledger.id}/decrement` })
+    .header('x-id', ledger.id)
     .sendStatus(201);
 });
 
-app.post('/ledgers/:ledgerId/increment', (req, res) => {
+app.post('/ledgers/:ledgerId/increment', async (req, res) => {
   let value = req.body.value;
   if (!value) {
     res.send(400, 'Value is required');
   }
 
-  let event = EventFactory.incrementLedger(req.params.ledgerId, value);
-  esConnection.writeEvents(
-    getStreamName(event.data.id),
-    EventStore.ExpectedVersion.Any,
-    false,
-    [event],
-    eventstoreConfig.credentials,
-    ()=>{});
+  let ledger = await ledgerRepository.get(req.params.ledgerId);
+  ledger.increment(value);
+  await ledgerRepository.save(ledger);
     
   res.sendStatus(200);
 });
 
-app.post('/ledgers/:ledgerId/decrement', (req, res) => {
+app.post('/ledgers/:ledgerId/decrement', async (req, res) => {
   let value = req.body.value;
   if (!value) {
     res.send(400, 'Value is required');
   }
 
-  let event = EventFactory.decrementLedger(req.params.ledgerId, value);
-  esConnection.writeEvents(
-    getStreamName(event.data.id),
-    EventStore.ExpectedVersion.Any,
-    false,
-    [event],
-    eventstoreConfig.credentials,
-    ()=>{});
-  
+  let ledger = await ledgerRepository.get(req.params.ledgerId);
+  ledger.decrement(value);
+  await ledgerRepository.save(ledger);
+
   res.sendStatus(200);
 });
 

@@ -1,10 +1,16 @@
 const generateGuid = require('uuid/v4');
 const EventStore = require('event-store-client');
 
-const createLedger = description => {
+const Types = {
+  created: 'CreateLedger',
+  incremented: 'IncrementLedger',
+  decremented: 'DecrementLedger'
+};
+
+const ledgerCreated = description => {
   return {
     eventId: EventStore.Connection.createGuid(),
-    eventType: 'CreateLedger',
+    eventType: Types.created,
     data: {
       id: generateGuid(),
       description: description
@@ -12,10 +18,10 @@ const createLedger = description => {
   };
 };
 
-const incrementLedger = (ledgerId, value) => {
+const ledgerIncremented = (ledgerId, value) => {
   return {
     eventId: EventStore.Connection.createGuid(),
-    eventType: 'IncrementLedger',
+    eventType: Types.incremented,
     data: {
       id: ledgerId,
       value: value
@@ -23,10 +29,10 @@ const incrementLedger = (ledgerId, value) => {
   };
 };
 
-const decrementLedger = (ledgerId, value) => {
+const ledgerDecremented = (ledgerId, value) => {
   return {
     eventId: EventStore.Connection.createGuid(),
-    eventType: 'DecrementLedger',
+    eventType: Types.decremented,
     data: {
       id: ledgerId,
       value: value
@@ -34,4 +40,4 @@ const decrementLedger = (ledgerId, value) => {
   };
 };
 
-module.exports = { createLedger, incrementLedger, decrementLedger };
+module.exports = { ledgerCreated, ledgerIncremented, ledgerDecremented, Types };
