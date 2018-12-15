@@ -1,87 +1,88 @@
 const EventFactory = require('./EventFactory');
 
-function Ledger() {
-  var self = this;
-
-  // domain properties
-  self.id = undefined;
-  self.description = undefined;
-  self.total = 0;
-
-  // aggregate properties
-  self.lastEventNumber = 0;
-  self.uncommittedEvents = [];
-
+class Ledger {
   // internal method to apply event to model and add to uncommitted events
-  const publish = event => {
-    self.apply(event);
-    self.uncommittedEvents.push(event);
-  };
-  
+  _publish(event) {
+    this.apply(event);
+    this.uncommittedEvents.push(event);
+  }
+
+  // internal methods to apply events
+  _created(event) {
+    this.id = event.data.id;
+    this.description = event.data.description;
+  }
+
+  _incremented(event) {
+    this.total += event.data.value;
+  }
+
+  _decremented(event) {
+    this.total -= event.data.value;
+  }
+
+  constructor() {
+    // domain properties
+    this.id = undefined;
+    this.description = undefined;
+    this.total = 0;
+
+    // aggregate properties
+    this.lastEventNumber = 0;
+    this.uncommittedEvents = [];
+  }
+
   // apply an event to this model
-  self.apply = event => {
-    self.lastEventNumber = event.eventNumber;
+  apply(event) {
+    this.lastEventNumber = event.eventNumber;
     switch(event.eventType) {
       case EventFactory.Types.created:
-        created(event);
+        this._created(event);
         break;
       case EventFactory.Types.incremented:
-        incremented(event);
+        this._incremented(event);
         break;
       case EventFactory.Types.decremented:
-        decremented(event);
+        this._decremented(event);
         break;
     }
-  };
+  }
 
-  // command methods
-  self.create = description => {
-    if (self.id !== undefined) {
+  // public methods to apply commands
+  create(description) {
+    if (this.id !== undefined) {
       throw new Error('Cannot create a ledger that already exists.');
     }
 
-    publish(EventFactory.ledgerCreated(description));
-  };
+    this._publish(EventFactory.ledgerCreated(description));
+  }
 
-  self.increment = value => {
-    if (self.id === undefined) {
+  increment(value) {
+    if (this.id === undefined) {
       throw new Error('Cannot increment a ledger that does not exist.');
     }
 
-    publish(EventFactory.ledgerIncremented(self.id, value));
-  };
+    this._publish(EventFactory.ledgerIncremented(this.id, value));
+  }
 
-  self.decrement = value => {
-    if (self.id === undefined) {
+  decrement(value) {
+    if (this.id === undefined) {
       throw new Error('Cannot decrement a ledger that does not exist.');
     }
 
-    publish(EventFactory.ledgerDecremented(self.id, value));
-  };
+    this._publish(EventFactory.ledgerDecremented(this.id, value));
+  }
 
-  // internal methods to apply events to model
-  const created = event => {
-    self.id = event.data.id;
-    self.description = event.data.description;
-  };
-
-  const incremented = event => {
-    self.total += event.data.value;
-  };
-
-  const decremented = event => {
-    self.total -= event.data.value;
-  };
-};
-
-Ledger.prototype.copy = function() {
-  let newLedger = new Ledger();
-  newLedger.id = this.id;
-  newLedger.description = this.description;
-  newLedger.total = this.total;
-  newLedger.lastEventNumber = this.lastEventNumber;
-  newLedger.uncommittedEvents = this.uncommittedEvents;
-  return newLedger;
-};
+  // copy this ledger instance
+  copy() {
+    let newLedger = new Ledger();
+    newLedger.id = this.id;
+    newLedger.description = this.description;
+    newLedger.total = this.total;
+    newLedger.lastEventNumber = this.lastEventNumber;
+    newLedger.uncommittedEvents = this.uncommittedEvents;
+    return newLedger;
+  }
+}
 
 module.exports = Ledger;
