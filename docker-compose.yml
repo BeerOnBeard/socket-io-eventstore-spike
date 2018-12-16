@@ -3,7 +3,7 @@ services:
   ledger-client:
     build: ./ledger-client
     ports:
-    - 8080:3000
+    - 3000:3000
   eventstore:
     image: eventstore/eventstore:release-4.1.1
     environment:
