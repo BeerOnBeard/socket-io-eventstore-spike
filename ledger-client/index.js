@@ -1,10 +1,10 @@
 const port = 3000;
 const eventStoreConfig = {
-  host: 'minikube',
-  port: 1113,
+  host: process.env.EVENTSTORE_HOST || 'localhost',
+  port: process.env.EVENTSTORE_PORT || 1113,
   credentials: {
-    username: 'admin',
-    password: 'changeit'
+    username: process.env.EVENTSTORE_USERNAME || 'admin',
+    password: process.env.EVENTSTORE_PASSWORD || 'changeit'
   }
 };
 
@@ -16,7 +16,18 @@ const EventStore = require('event-store-client');
 const LedgerRepository = require('./LedgerRepository');
 const LedgerController = require('./LedgerController');
 
-const eventStoreConnection = new EventStore.Connection({ host: eventStoreConfig.host, port: eventStoreConfig.port });
+const eventStoreConnection = new EventStore.Connection({
+  host: eventStoreConfig.host,
+  port: eventStoreConfig.port,
+  onClose: hadError => {
+    console.log('Connection closed');
+    if (hadError) {
+      console.log('Error caused closure');
+      process.exit(1);
+    }
+  }
+});
+
 const ledgerRepository = new LedgerRepository(eventStoreConnection, eventStoreConfig.credentials.username, eventStoreConfig.credentials.password);
 const ledgerController = new LedgerController(ledgerRepository);
 
@@ -46,10 +57,21 @@ eventStoreConnection.subscribeToStream(
 
     io.to(ledgerEvent.data.id).emit('event', ledgerEvent);
   },
-  confirmation => console.log(confirmation),
-  dropped => console.log(dropped),
+  confirmation => {
+    console.log('Subscription confirmation');
+    console.log(confirmation);
+  },
+  dropped => {
+    console.log('Subsription dropped');
+    console.log(dropped);
+    process.exit(1);
+  },
   eventStoreConfig.credentials,
-  notHandled => console.log(notHandled)
+  notHandled => {
+    console.log('Unhandled error in subscription');
+    console.log(notHandled);
+    process.exit(1);
+  }
 );
 
 server.listen(port, () => console.log(`Listening on ${port}...`));

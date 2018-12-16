@@ -4,6 +4,11 @@ services:
     build: ./ledger-client
     ports:
     - 3000:3000
+    depends_on:
+    - eventstore
+    restart: unless-stopped
+    environment:
+      EVENTSTORE_HOST: 'eventstore'
   eventstore:
     image: eventstore/eventstore:release-4.1.1
     environment:
